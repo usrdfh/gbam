@@ -28,7 +28,7 @@ md5 = "0.7.0"
 rand = "0.8"
 
 [lib]
-crate-type = ["rlib", "cdylib"]
+crate-type = ["rlib"]
 
 [package.metadata.maturin]
 requires-dist = ["pysam==0.16.0.1"]

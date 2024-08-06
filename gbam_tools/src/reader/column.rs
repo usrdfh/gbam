@@ -41,6 +41,8 @@ impl Inner {
 pub trait Column {
     // Fills GbamRecord field with data from corresponding BAM record.
     fn fill_record_field(&mut self, item_num: usize, rec: &mut GbamRecord) ;
+    // For more direct coordination of calls.
+    fn get_field_bytes(&mut self, item_num: usize) -> &[u8];
 }
 
 /// GBAM file column. Responsible for fetching data.
@@ -52,6 +54,10 @@ impl Column for FixedColumn {
     /// decompressed.
     fn fill_record_field(&mut self, item_num: usize, rec: &mut GbamRecord) {
         rec.parse_from_bytes(&self.0.field.clone(), self.get_item(item_num));
+    }
+
+    fn get_field_bytes(&mut self, item_num: usize) -> &[u8] {
+        self.get_item(item_num)
     }
 }
 
@@ -98,6 +104,10 @@ pub struct VariableColumn {
 impl Column for VariableColumn {
     fn fill_record_field(&mut self, item_num: usize, rec: &mut GbamRecord) {
         rec.parse_from_bytes(&self.inner.field.clone(), self.get_item(item_num));
+    }
+
+    fn get_field_bytes(&mut self, item_num: usize) -> &[u8] {
+        self.get_item(item_num)
     }
 }
 

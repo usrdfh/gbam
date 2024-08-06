@@ -5,9 +5,9 @@ use std::{borrow::Borrow, fs::File};
 use bam_tools::record::fields::{
     field_type, var_size_field_to_index, FieldType, Fields, FIELDS_NUM,
 };
-use byteorder::LittleEndian;
 use memmap2::MmapOptions;
 use memmap2::Mmap;
+use rust_htslib::htslib::bam1_t;
 
 use crate::meta::{FileInfo, FileMeta, FILE_INFO_SIZE, BlockMeta};
 use crate::writer::calc_crc_for_meta_bytes;
@@ -16,6 +16,7 @@ use super::{
     column::{Column, FixedColumn, Inner, VariableColumn},
     parse_tmplt::ParsingTemplate,
     record::GbamRecord,
+    record::gen_hts_rec,
     records::Records,
 };
 
@@ -27,6 +28,7 @@ pub struct Reader {
     pub parsing_template: ParsingTemplate,
     original_template: ParsingTemplate,
     pub amount: usize,
+    pub next_not_read: usize,
     pub file_meta: Arc<FileMeta>,
     // Kept so File won't drop while used by mmap.
     _inner: Box<File>,
@@ -73,11 +75,13 @@ impl Reader {
             _inner,
             mmap,
             index_mapping: index_mapping.clone(),
+            next_not_read: 0,
         })
     }
 
     #[inline(always)]
     pub fn fill_record(&mut self, mut rec_num: usize, rec: &mut GbamRecord) {
+        // That's for index sorting
         if let Some(index_map) = &self.index_mapping {
             rec_num = index_map[rec_num] as usize;
         }
@@ -88,6 +92,28 @@ impl Reader {
                 .unwrap()
                 .fill_record_field(rec_num, rec);
         }
+    }
+
+    #[inline(always)]
+    pub fn fill_bam1_t_record(&mut self, mut rec_num: usize, rec: &mut bam1_t) {
+        // That's for index sorting
+        if let Some(index_map) = &self.index_mapping {
+            rec_num = index_map[rec_num] as usize;
+        }
+        assert!(rec_num < self.amount);
+
+        let mut set_fields = vec![false; FIELDS_NUM];
+        for r in self.parsing_template.get_active_data_fields_iter() {
+            set_fields[*r as usize] = true;
+        }
+        let mut temp : Vec<Option::<&[u8]>> = vec![None; FIELDS_NUM];
+        for (i, m) in self.columns.iter_mut().enumerate() {
+            if set_fields[i] {
+                temp[i] = Some(m.as_mut().unwrap().get_field_bytes(rec_num));
+            }
+        }
+
+        gen_hts_rec(temp, rec)
     }
 
     pub fn get_column(&mut self, field: &Fields) -> &mut Box<dyn Column + Send> {

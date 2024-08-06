@@ -39,7 +39,6 @@ pub mod query {
 }
 
 
-
 /// Manages parallel compression
 mod compressor;
 /// Meta information for GBAM file

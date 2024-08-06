@@ -4,6 +4,7 @@ members = [
     "bam_tools",
     "gbam_tools",
     "gbam_binary",
+    "c_api",
 ]
 
 [profile.release]

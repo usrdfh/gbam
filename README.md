@@ -17,6 +17,7 @@ You may need to install following packages:
 ```shell
 sudo apt-get install liblzma-dev
 sudo apt-get install libbz2-dev
+sudo apt-get install libhts-dev
 ```
 
 # Usage

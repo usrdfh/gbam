@@ -4,6 +4,7 @@ use crate::{U16_SIZE, U32_SIZE, U8_SIZE};
 use byteorder::{ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut};
+use std::io::Write;
 
 use super::tags::get_hit_count;
 
@@ -274,7 +275,7 @@ pub fn decode_seq(bytes: &[u8], res: &mut String) {
 
 
 /// From NOODLES crate.
-pub fn put_sequence(mut dst: &mut [u8], read_length: usize, sequence: &String) -> std::io::Result<()>
+pub fn put_sequence<W: Write>(mut dst: &mut W, read_length: usize, sequence: &String) -> std::io::Result<()>
 
 {
     if sequence.is_empty() {

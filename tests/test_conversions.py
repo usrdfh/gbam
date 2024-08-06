@@ -146,3 +146,17 @@ def generate_views_for_gbam_and_bam_files(gbam_input, gbam_index, bam_input):
 def test_view(request):
     gbam_results, samtools_results = generate_views_for_gbam_and_bam_files(gbam_file, None, bam_file_path)
     byte_file_comparison(samtools_results.name, gbam_results.name)
+
+def test_cffi():
+    gbam_results = NamedTemporaryFile()
+    samtools_results = NamedTemporaryFile()
+
+    # Build the .c test
+    subprocess.check_output([f"bash {cur_file_path.parent}/tests/build_test.sh"], shell=True) 
+
+    subprocess.check_output([f"samtools view {bam_file_path} > {samtools_results.name}"], shell=True) 
+
+    test_bin = cur_file_path.parent/"target"/"release"/"ffi_test.o"
+    subprocess.check_output([f"{test_bin} {gbam_file.name} > {gbam_results.name}"], shell=True) 
+
+    byte_file_comparison(samtools_results.name, gbam_results.name)

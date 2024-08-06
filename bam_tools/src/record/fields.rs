@@ -14,6 +14,9 @@ pub const FIELDS_NUM: usize = 18;
 #[allow(dead_code)]
 pub const DATA_FIELDS_NUM: usize = 13;
 /// Types of fields contained in BAM file.
+/// WARNING: ORDER IS IMPORTANT! 
+/// gbam_tools/src/reader/reader.rs:85, if the order is incorrect, bam1_t structure data field
+/// will be filled in a wrong order and it would break it.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[allow(missing_docs)]
 pub enum Fields {

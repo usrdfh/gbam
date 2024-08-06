@@ -1,0 +1,14 @@
+[package]
+name = "gbam_tools_cffi"
+version = "0.1.0"
+authors = ["nickroz"]
+edition = "2018"
+
+[dependencies]
+gbam_tools = { path = "../gbam_tools"}
+byteorder = "1.2.3"
+rust-htslib = { version = "0.39.0", default-features = false }
+libc = "0.2.93"
+
+[lib]
+crate-type = ["cdylib"]
