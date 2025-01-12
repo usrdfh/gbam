@@ -298,6 +298,40 @@ fn view_header(args: Cli){
     println!("{}", header);
 }
 
+fn parse_tag(tags: &[u8], target_tag: &str) -> Option<String> {
+    // Convert the target tag to bytes
+    let target_bytes = target_tag.as_bytes();
+    let tag_length = target_bytes.len();
+
+    if tag_length == 0 || tag_length + 1 >= tags.len() {
+        // Ensure the target tag is not empty and fits within the input slice
+        return None;
+    }
+
+    let mut i = 0;
+    while i <= tags.len() - tag_length - 1 {
+        // Look for the target tag followed by its type identifier
+        if tags[i..i + tag_length] == target_bytes[..] {
+            // Skip the tag name and type
+            i += tag_length + 1;
+            let mut result = Vec::new();
+
+            // Read until null terminator or end of tags
+            while i < tags.len() && tags[i] != 0 {
+                result.push(tags[i]);
+                i += 1;
+            }
+
+            if !result.is_empty() {
+                return String::from_utf8(result).ok();
+            }
+        }
+        i += 1;
+    }
+    None
+}
+
+
 fn view_file(args: Cli, template: ParsingTemplate){
     let file = File::open(args.in_path.as_path().to_str().unwrap()).unwrap();
 
@@ -356,5 +390,73 @@ fn patch_dups(args: Cli){
         }
         write_manual.seek(SeekFrom::Start(block.seekpos)).unwrap();
         write_manual.write_all(&buf).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_tag_with_exact_match() {
+        let tags = b"TAGZvalue1\0LONGERTAGZvalue2\0";
+        let result = parse_tag(tags, "TAG");
+        assert_eq!(result, Some("value1".to_string()));
+    }
+
+    #[test]
+    fn test_parse_tag_with_longer_tag() {
+        let tags = b"TAGZvalue1\0LONGERTAGZvalue2\0";
+        let result = parse_tag(tags, "LONGERTAG");
+        assert_eq!(result, Some("value2".to_string()));
+    }
+
+    #[test]
+    fn test_parse_tag_with_nonexistent_tag() {
+        let tags = b"TAGZvalue1\0LONGERTAGZvalue2\0";
+        let result = parse_tag(tags, "NONEXISTENT");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_parse_tag_with_empty_tags() {
+        let tags = b"";
+        let result = parse_tag(tags, "TAG");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_parse_tag_with_empty_target_tag() {
+        let tags = b"TAGZvalue1\0LONGERTAGZvalue2\0";
+        let result = parse_tag(tags, "");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_parse_tag_with_multiple_tags() {
+        let tags = b"TAGZvalue1\0TAGZvalue2\0";
+        let result = parse_tag(tags, "TAG");
+        assert_eq!(result, Some("value1".to_string()));
+    }
+
+    #[test]
+    fn test_parse_tag_with_null_terminator_at_end() {
+        let tags = b"TAGZvalue1\0";
+        let result = parse_tag(tags, "TAG");
+        assert_eq!(result, Some("value1".to_string()));
+    }
+
+    #[test]
+    fn test_parse_tag_with_partial_tag_match() {
+        let tags = b"TAZvalue1\0";
+        let result = parse_tag(tags, "TAG");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_parse_tag_with_no_null_terminator() {
+        let tags = b"TAGZvalue1";
+        let result = parse_tag(tags, "TAG");
+        assert_eq!(result, Some("value1".to_string()));
     }
 }

@@ -82,6 +82,7 @@ mod tests {
             position: 0,
             len: 8,
             data: Cursor::new(vec![0; 4]),
+            compressed_size: 0,
         };
 
         assert_eq!(block.virtual_position(), VirtualPosition::from(0));
@@ -109,6 +110,7 @@ mod tests {
             position: 0,
             len: 8,
             data: Cursor::new(vec![0; 4]),
+            compressed_size: 0,
         };
 
         assert!(!block.is_eof());
